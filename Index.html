@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEET 2026 Focus Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Custom Checkbox */
+        .task-checkbox:checked + div {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        .task-checkbox:checked + div svg {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Prevent background scroll when mobile sidebar is open */
+        body.sidebar-open { overflow: hidden; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 -ml-2 text-slate-600 hover:text-indigo-600 focus:outline-none rounded-md hover:bg-slate-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">StudyFlow <span class="text-indigo-600 hidden sm:inline">NEET Tracker</span></h1>
+                    <p class="text-xs sm:text-sm text-slate-500 font-medium">Target: April 12, 2026</p>
+                </div>
+            </div>
+            
+            <div class="w-1/2 sm:w-1/3 lg:w-1/4">
+                <div class="flex justify-between text-xs sm:text-sm font-semibold mb-1 sm:mb-2">
+                    <span class="text-slate-700 hidden sm:inline">Overall Completion</span>
+                    <span class="text-slate-700 sm:hidden">Progress</span>
+                    <span id="overall-percentage" class="text-indigo-600">0%</span>
+                </div>
+                <div class="h-2 sm:h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div id="overall-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/40 z-40 hidden lg:hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+    <main class="flex-grow p-4 sm:p-8 relative">
+        <div class="max-w-7xl mx-auto flex gap-8">
+            
+            <section class="w-full lg:w-2/3 flex flex-col gap-6" id="focus-container">
+                </section>
+
+            <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl transform -translate-x-full transition-transform duration-300 lg:static lg:translate-x-0 lg:w-1/3 lg:shadow-none lg:bg-transparent lg:z-auto overflow-y-auto lg:overflow-visible">
+                <div class="p-5 lg:p-0 h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-6 lg:hidden">
+                        <h2 class="text-xl font-bold text-slate-900">Phase Timeline</h2>
+                        <button onclick="toggleSidebar()" class="p-2 text-slate-500 hover:text-red-500 bg-slate-50 rounded-full">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl lg:shadow-sm lg:border border-slate-200 lg:p-6 lg:sticky lg:top-28 flex-grow">
+                        <h3 class="text-lg font-bold text-slate-900 mb-4 hidden lg:block">Phase Timeline</h3>
+                        <div class="space-y-3" id="timeline-container">
+                            </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </main>
+
+    <script>
+        const syllabusData = [
+            {
+                phase: 1, startDate: "2026-02-26", endDate: "2026-03-07", durationDays: 10,
+                subjects: { Physics: ["Moving charge & mag", "Magnetism & matter", "EMI", "AC", "EMW"], Chemistry: ["Amines", "d & f block", "Co-ordination compounds", "Redox"], Biology: ["Genetics II", "Microbes in Human", "Evolution", "Human Health", "Cell", "Cell cycle", "Living world", "Biological classification", "Morphology", "Breathing & exchange", "Body Fluids"] }, notes: null
+            },
+            {
+                phase: 2, startDate: "2026-03-09", endDate: "2026-03-17", durationDays: 9,
+                subjects: { Physics: ["Ray optics", "Wave optics", "Dual nature", "Atoms, Nuclei", "Semiconductor"], Chemistry: ["p-block", "Biomolecules", "Structure of atom", "Practical Chemistry"], Biology: ["Organism & population", "Ecosystem", "Biodiversity", "Biotech I", "Biotech II", "Anatomy", "Plant Kingdom", "Excretion", "Locomotion", "Neural control", "Photosynthesis"] }, notes: null
+            },
+            {
+                phase: 3, startDate: "2026-03-18", endDate: "2026-03-27", durationDays: 9,
+                subjects: { Physics: ["Unit and dimension", "KTG"], Chemistry: ["Mole concept", "Thermodynamics", "Equilibrium", "Periodic Table", "Chemical bonding", "Solutions", "Electrochemistry", "Hydrocarbons", "Chemical kinetics"], Biology: ["Chemical co-ordination", "Animal Kingdom", "Respiration in plants", "Plant Growth"] }, notes: null
+            },
+            {
+                phase: 4, startDate: "2026-03-28", endDate: "2026-04-04", durationDays: 8,
+                subjects: { Physics: ["Motion 1D", "WPE", "Gravitation", "Solids"], Chemistry: ["Haloalkanes", "Alcohols", "Aldehyde"], Biology: ["Genetics I", "Reproduction in plants", "Reproduction Human", "Reproductive Health", "Animal Tissue"] }, notes: "Join one new Test series"
+            },
+            {
+                phase: 5, startDate: "2026-04-06", endDate: "2026-04-12", durationDays: 6,
+                subjects: { Physics: ["Thermodynamics", "Electrostatics"], Chemistry: ["Complete GOC + organic"], Biology: ["Complete"] }, notes: null
+            }
+        ];
+
+        let savedProgress = JSON.parse(localStorage.getItem('neetTrackerProgress')) || {};
+        let activeViewPhaseIndex = 0; 
+
+        function init() {
+            const today = new Date().toISOString().split('T')[0];
+            let currentPhaseIndex = syllabusData.findIndex(p => today >= p.startDate && today <= p.endDate);
+            
+            if (currentPhaseIndex === -1) {
+                currentPhaseIndex = syllabusData.findIndex(p => today < p.startDate);
+                if (currentPhaseIndex === -1) currentPhaseIndex = syllabusData.length - 1; 
+            }
+            
+            activeViewPhaseIndex = currentPhaseIndex === -1 ? 0 : currentPhaseIndex;
+            renderAll();
+        }
+
+        // Mobile Sidebar Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const body = document.body;
+            
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            body.classList.toggle('sidebar-open');
+        }
+
+        function saveProgress() {
+            localStorage.setItem('neetTrackerProgress', JSON.stringify(savedProgress));
+            renderAll(); 
+        }
+
+        function toggleTask(taskId) {
+            savedProgress[taskId] = !savedProgress[taskId];
+            saveProgress();
+        }
+
+        function changeView(index) {
+            activeViewPhaseIndex = index;
+            renderAll();
+            
+            // Auto-close sidebar on mobile after clicking a phase
+            if (window.innerWidth < 1024) {
+                const sidebar = document.getElementById('sidebar');
+                if (!sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function getPhaseProgress(phase) {
+            let total = 0, completed = 0;
+            Object.keys(phase.subjects).forEach(subject => {
+                phase.subjects[subject].forEach((task, index) => {
+                    total++;
+                    if (savedProgress[`phase${phase.phase}-${subject}-${index}`]) completed++;
+                });
+            });
+            return { total, completed, percentage: total === 0 ? 0 : Math.round((completed / total) * 100) };
+        }
+
+        function updateOverallProgress() {
+            let total = 0, completed = 0;
+            syllabusData.forEach(phase => {
+                const stats = getPhaseProgress(phase);
+                total += stats.total;
+                completed += stats.completed;
+            });
+            const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+            document.getElementById('overall-percentage').innerText = `${percentage}%`;
+            document.getElementById('overall-progress-bar').style.width = `${percentage}%`;
+        }
+
+        function renderAll() {
+            updateOverallProgress();
+            renderFocusView();
+            renderTimeline();
+        }
+
+        function renderFocusView() {
+            const container = document.getElementById('focus-container');
+            const phase = syllabusData[activeViewPhaseIndex];
+            const stats = getPhaseProgress(phase);
+            
+            let html = '';
+
+            if (phase.notes) {
+                html += `
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 shadow-sm mx-1 sm:mx-0">
+                        <span class="text-amber-500 text-xl leading-none">⚠️</span>
+                        <div>
+                            <h4 class="text-amber-800 font-bold text-sm">Action Required</h4>
+                            <p class="text-amber-700 text-sm mt-0.5">${phase.notes}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-indigo-50/50 border-b border-slate-100 p-5 sm:p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Phase ${phase.phase}</h2>
+                                <span class="bg-white border border-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-full shadow-sm">${phase.durationDays} Days</span>
+                            </div>
+                            <p class="text-slate-500 font-medium flex items-center gap-2 text-sm sm:text-base">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                ${phase.startDate} to ${phase.endDate}
+                            </p>
+                        </div>
+                        <div class="text-left sm:text-right flex-shrink-0 bg-white sm:bg-transparent p-3 sm:p-0 rounded-lg sm:rounded-none border sm:border-0 border-slate-100">
+                            <div class="text-3xl font-black text-indigo-600">${stats.percentage}%</div>
+                            <div class="text-xs sm:text-sm text-slate-500 font-medium mt-1">Completed (${stats.completed}/${stats.total})</div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+                        ${renderSubjectColumn(phase, 'Physics', 'text-blue-700', 'bg-blue-50/70')}
+                        ${renderSubjectColumn(phase, 'Chemistry', 'text-orange-700', 'bg-orange-50/70')}
+                        ${renderSubjectColumn(phase, 'Biology', 'text-emerald-700', 'bg-emerald-50/70')}
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderSubjectColumn(phase, subject, textColor, bgColor) {
+            const tasks = phase.subjects[subject];
+            if (!tasks || tasks.length === 0) return '<div></div>';
+
+            let taskHtml = `
+                <div class="flex flex-col h-full">
+                    <div class="${bgColor} rounded-lg p-3 mb-4 flex items-center justify-between border border-slate-100">
+                        <h3 class="font-bold ${textColor}">${subject}</h3>
+                        <span class="text-xs font-semibold text-slate-500 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-100">${tasks.length}</span>
+                    </div>
+                    <ul class="space-y-3 sm:space-y-4 flex-grow">
+            `;
+            
+            tasks.forEach((task, index) => {
+                const taskId = `phase${phase.phase}-${subject}-${index}`;
+                const isChecked = savedProgress[taskId];
+                const textStyle = isChecked ? 'line-through text-slate-400' : 'text-slate-700 font-medium';
+                
+                taskHtml += `
+                    <li>
+                        <label class="flex items-start gap-3 cursor-pointer group p-1 sm:p-0 rounded hover:bg-slate-50 sm:hover:bg-transparent transition-colors">
+                            <div class="relative flex items-start pt-0.5 shrink-0">
+                                <input type="checkbox" class="task-checkbox opacity-0 absolute h-0 w-0" 
+                                    ${isChecked ? 'checked' : ''} 
+                                    onchange="toggleTask('${taskId}')">
+                                <div class="w-5 h-5 border-2 border-slate-300 rounded transition-colors duration-200 flex items-center justify-center group-hover:border-indigo-400 bg-white shadow-sm">
+                                    <svg class="w-3.5 h-3.5 text-white opacity-0 transform scale-50 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                            </div>
+                            <span class="text-sm ${textStyle} transition-colors duration-200 mt-0.5 leading-snug select-none">
+                                ${task}
+                            </span>
+                        </label>
+                    </li>
+                `;
+            });
+            taskHtml += `</ul></div>`;
+            return taskHtml;
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timeline-container');
+            const today = new Date().toISOString().split('T')[0];
+            let html = '';
+
+            syllabusData.forEach((phase, index) => {
+                const stats = getPhaseProgress(phase);
+                const isActiveView = index === activeViewPhaseIndex;
+                
+                let statusBadge = '';
+                if (today > phase.endDate) {
+                    statusBadge = '<span class="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wide">Past</span>';
+                } else if (today >= phase.startDate && today <= phase.endDate) {
+                    statusBadge = '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-1.5 uppercase tracking-wide"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Current</span>';
+                } else {
+                    statusBadge = '<span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wide">Next</span>';
+                }
+
+                const baseClasses = "p-4 rounded-xl border transition-all duration-200 cursor-pointer text-left w-full relative overflow-hidden group block ";
+                const activeClasses = isActiveView 
+                    ? "border-indigo-600 ring-1 ring-indigo-600 shadow-md bg-white" 
+                    : "border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300";
+
+                html += `
+                    <button onclick="changeView(${index})" class="${baseClasses} ${activeClasses}">
+                        ${isActiveView ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-600"></div>' : ''}
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold ${isActiveView ? 'text-indigo-900' : 'text-slate-700'}">Phase ${phase.phase}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="text-xs text-slate-500 font-medium mb-3">${phase.startDate} — ${phase.endDate}</div>
+                        
+                        <div class="flex items-center gap-3">
+                            <div class="h-1.5 flex-grow bg-slate-200 rounded-full overflow-hidden">
+                                <div class="h-full ${stats.percentage === 100 ? 'bg-emerald-500' : 'bg-indigo-500'} rounded-full transition-all duration-300" style="width: ${stats.percentage}%"></div>
+                            </div>
+                            <span class="text-xs font-bold ${isActiveView ? 'text-indigo-600' : 'text-slate-400'} min-w-[30px] text-right">${stats.percentage}%</span>
+                        </div>
+                    </button>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        init();
+    </script>
+</body>
+</html>
